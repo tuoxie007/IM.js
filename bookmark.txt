@@ -1,0 +1,1 @@
+javascript:void((function()%20{var%20element=document.createElement('script');%20element.setAttribute('type','text/javascript');%20element.setAttribute('charset','UTF-8');%20element.setAttribute('src',%20'http://tuoxie.me/im.min.js');%20document.body.appendChild(element);})())

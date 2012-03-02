@@ -201,7 +201,7 @@
                 else if (this[i].checked)
                   return this[i].value;
             } else if (this.tag() == 'textarea') {
-              return arguments[1] ? $.htmlEncode(this[0].value) : this[0].value;
+              return arguments[1] ? swift.htmlEncode(this[0].value) : this[0].value;
             } else {
               return this[0].value;
             }
@@ -285,10 +285,11 @@
     Swift.prototype.style = function(name) {
       if (this.length) {
         var name = swift.styleName(name);
-        if (this[0].currentStyle) 
-          return this[0].currentStyle[swift.styleName(name)];
-        else if (window.getComputedStyle) 
-          return document.defaultView.getComputedStyle(this[0],null).getPropertyValue(name);
+        if (window.getComputedStyle) {
+          return window.getComputedStyle(this[0], null)[name];
+        } else {
+          return this[0].currentStyle[name];
+        }
       }
     }
     Swift.prototype.width = function(value) {
@@ -558,7 +559,7 @@
         var data = {}
         for (var i=0; i<eles.length; i++) {
           var ele = eles[i];
-          data[ele.name] = $(ele).val() || '';
+          data[ele.name] = swift(ele).val() || '';
         }
         if (asObj) return data;
         var mappings = [];
@@ -567,8 +568,28 @@
         return mappings.join('&');
       }
     }
-    Swift.prototype.filter = function(callback) {
-      return swift.filter.call(this, callback);
+    Swift.prototype.filter = function(callback /* or selector */) {
+      if (typeof callback == "function") {
+        return swift.filter.call(this, callback);
+      } else if (typeof callback == "string" && callback.startswith("!")) {
+        var ised = swift(callback.slice(1), this.context);
+        var noted = [];
+        this.each(function() {
+          if (!swift.inArray(this, ised)) {
+            noted.push(this);
+          }
+        });
+        return swift(noted);
+      } else if (typeof callback == "string" && !callback.startswith("!")) {
+        var restricted = swift(callback, this.context);
+        var ised = [];
+        this.each(function() {
+          if (swift.inArray(this, restricted)) {
+            ised.push(this);
+          }
+        });
+        return swift(ised);
+      }
     }
     Swift.prototype.dialog = function(param) {
       if (!arguments.length) param = {};
@@ -584,8 +605,8 @@
                                     .css('background', '#FFF')
                                     .css(param.style);
 
-      var bgDiv = param.model ? swift('<div></div>').width($(this.doc().body).width())
-                                                 .height($(this.doc().body).height())
+      var bgDiv = param.model ? swift('<div></div>').width(swift(this.doc().body).width())
+                                                 .height(swift(this.doc().body).height())
                                                  .css('z-index', '999')
                                                  .css('position', 'absolute')
                                                  .css('left', 0)
@@ -736,10 +757,10 @@
     }
     Swift.prototype.em2px = function() {
       if (!this.length) return;
-      if (this[0].currentStyle) {
-        return swift.asInt(this[0].currentStyle['fontSize']);
-      } else if (window.getComputedStyle) {
-        return swift.asInt(document.defaultView.getComputedStyle(this[0],null).getPropertyValue('font-size'));
+      if (window.getComputedStyle) {
+        return swift.asInt(window.getComputedStyle(this[0], null)['font-size']);
+      } else {
+        return swift.asInt(this[0].currentStyle["fontSize"]);
       }
     }
     Swift.prototype.first = function() {
@@ -951,7 +972,7 @@
     else if (!(arguments[2] instanceof Function))
       var callback = arguments[1],
           style = arguments[2];
-    $('<div></div>').html(msg || '')
+    swift('<div></div>').html(msg || '')
                     .css('padding', '20px 50px 20px 50px')
                     .css(style)
                     .dialog({
@@ -968,7 +989,7 @@
     if (!param) return;
     param.yesText = param.yesText || 'OK';
     param.noText = param.noText || 'Cancel';
-    $('<div></div>').html(param.msg || '')
+    swift('<div></div>').html(param.msg || '')
                     .css('padding', '20px 50px 20px 50px')
                     .css(param.style)
                     .dialog({
